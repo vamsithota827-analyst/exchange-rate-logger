@@ -1,0 +1,32 @@
+name: Daily exchange rate log
+
+on:
+  schedule:
+    - cron: "30 3 * * *"    # 03:30 UTC = 09:00 AM IST, every day
+  workflow_dispatch:         # lets you run it manually with a button
+
+permissions:
+  contents: write            # needed so the job can save the log file
+
+jobs:
+  log-rates:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run script
+        run: python fetch_rates.py
+
+      - name: Commit and push the updated log
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/rates_log.csv
+          git commit -m "Log rates: $(date -u +'%Y-%m-%d %H:%M UTC')" || echo "Nothing to commit"
+          git push
